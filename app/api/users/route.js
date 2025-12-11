@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
-import { eq, ilike, and, sql } from "drizzle-orm";
+import { eq, ilike, and, sql, count, desc } from "drizzle-orm";
 
 /**
  * GET /api/users
