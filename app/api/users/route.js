@@ -19,10 +19,8 @@ export async function POST(request) {
             errors.name = 'Name is required and must be a non-empty string';
         }
 
-        if (body.email !== undefined && body.email !== null) {
-            if (typeof body.email !== 'string' || body.email.trim() === '') {
-                errors.email = 'Email must be a non-empty string';
-            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+        if (body.email) {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
                 errors.email = 'Email must be a valid email address';
             } else if (body.email.length > 256) {
                 errors.email = 'Email must not exceed 256 characters';
@@ -140,13 +138,13 @@ export async function POST(request) {
             userData.language = body.language;
         }
         if (body.tzone !== undefined && body.tzone !== null) {
-            userData.tzone = body.tzone.toString();
+            userData.tzone = parseFloat(body.tzone);
         }
         if (body.lat !== undefined && body.lat !== null) {
-            userData.lat = body.lat.toString();
+            userData.lat = parseFloat(body.lat);
         }
         if (body.lon !== undefined && body.lon !== null) {
-            userData.lon = body.lon.toString();
+            userData.lon = parseFloat(body.lon);
         }
         if (body.contact !== undefined && body.contact !== null) {
             userData.contact = body.contact;
