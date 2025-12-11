@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import SuccessPopup from "../components/SuccessPopup";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const [loader, setLoader] = useState(false);
@@ -65,21 +66,24 @@ export default function Home() {
       if (!response.ok) {
         // Handle validation errors or other API errors
         console.error('API Error:', data);
-        alert(`Error: ${data.message || 'Failed to submit data'}`);
         setLoader(false);
         return;
       }
 
-      // Success
-      console.log('User created successfully:', data);
-      alert('User created successfully!');
+      setShowSuccess(true);
 
     } catch (error) {
+      toast.error("Something went wrong");
       console.error('Network or unexpected error:', error);
-      alert('Failed to submit data. Please try again.');
     } finally {
       setLoader(false);
     }
+  };
+
+  const handlePopupClose = () => {
+    localStorage.removeItem("user");
+    setFormKey((prev) => prev + 1);
+    setShowSuccess(false);
   };
 
   return (
