@@ -142,6 +142,9 @@ export async function POST(request) {
         if (body.lon !== undefined && body.lon !== null) {
             userData.lon = body.lon.toString();
         }
+        if (body.contact !== undefined && body.contact !== null) {
+            userData.contact = body.contact;
+        }
 
         // Insert into database
         const result = await db.insert(users).values(userData).returning();
