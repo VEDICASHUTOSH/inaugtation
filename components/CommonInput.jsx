@@ -38,6 +38,7 @@ export default function CommonInput(props) {
     lat: "",
     lon: "",
     country: "India",
+    contact: "",
   };
 
   // const [city, setcity] = useState({name:''});
