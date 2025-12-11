@@ -168,7 +168,7 @@ export default function ReportPage() {
                   >
                     <td className="px-6 py-4 font-medium">{item.name}</td>
                     <td className="px-6 py-4 text-zinc-200">
-                      {item.contact ? `+91 ${item.contact}` : "-"}
+                      {item.contact || "-"}
                     </td>
                     <td className="px-6 py-4 text-zinc-200">
                       {item.email || "-"}

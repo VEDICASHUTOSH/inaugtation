@@ -358,11 +358,3 @@ export async function PATCH(request) {
     );
   }
 }
-
-/**
- * PATCH /api/users
- * Update report_status for a specific user
- * Request body:
- * - id: User ID (required)
- * - report_status: New status value - PENDING or DONE (required)
- */
