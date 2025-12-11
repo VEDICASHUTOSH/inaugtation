@@ -36,10 +36,10 @@ export default function Home() {
     setLoader(true);
 
     try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
+      const response = await fetch("/api/users", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name,
@@ -65,23 +65,22 @@ export default function Home() {
 
       if (!response.ok) {
         // Handle validation errors or other API errors
-        console.error('API Error:', data);
+        console.error("API Error:", data);
+        toast.error(data.message || "An error occurred");
         setLoader(false);
         return;
       }
 
       setShowSuccess(true);
-
     } catch (error) {
       toast.error("Something went wrong");
-      console.error('Network or unexpected error:', error);
+      console.error("Network or unexpected error:", error);
     } finally {
       setLoader(false);
     }
   };
 
   const handlePopupClose = () => {
-    localStorage.removeItem("user");
     setFormKey((prev) => prev + 1);
     setShowSuccess(false);
   };

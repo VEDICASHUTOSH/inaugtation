@@ -28,11 +28,11 @@ export default function CommonInput(props) {
     name: "",
     email: "",
     birth: "",
-    day: "",
-    month: "",
-    year: "",
-    min: "",
-    hour: "",
+    day: 1,
+    month: 2,
+    year: 1941,
+    min: 0,
+    hour: 12,
     language: props.language ? props.language : "english",
     gender: "male",
     tzone: 5.5,
@@ -105,8 +105,35 @@ export default function CommonInput(props) {
         setreqdate(false);
       }, 4000);
     } else if (Object.keys(validationErrors).length !== 0) {
-      toast.error("All details must be filled");
-      setFieldErrors(validationErrors);
+      if (validationErrors.name) {
+        toast.error("Name not filled");
+        setFieldErrors({ name: validationErrors.name });
+      } else if (
+        validationErrors.day ||
+        validationErrors.month ||
+        validationErrors.year ||
+        validationErrors.hour ||
+        validationErrors.min
+      ) {
+        toast.error("Date/Time details incomplete");
+        setFieldErrors({
+          day: validationErrors.day,
+          month: validationErrors.month,
+          year: validationErrors.year,
+          hour: validationErrors.hour,
+          min: validationErrors.min,
+        });
+      } else if (validationErrors.birth) {
+        toast.error("Place not selected");
+        setFieldErrors({ birth: validationErrors.birth });
+      } else if (validationErrors.contact) {
+        toast.error("Contact number not proper or filled");
+        setFieldErrors({ contact: validationErrors.contact });
+      } else {
+        toast.error("All details must be filled");
+        setFieldErrors(validationErrors);
+      }
+      // setFieldErrors(validationErrors);
       // Clear errors after 4 seconds
       setTimeout(() => {
         // seterror(null);
