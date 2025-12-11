@@ -247,3 +247,80 @@ export async function POST(request) {
         }, { status: 500 });
     }
 }
+
+/**
+ * PATCH /api/users
+ * Update report_status for a specific user
+ * Request body:
+ * - id: User ID (required)
+ * - report_status: New status value - PENDING or DONE (required)
+ */
+export async function PATCH(request) {
+    try {
+        const body = await request.json();
+
+        // Validation
+        if (!body.id) {
+            return NextResponse.json({
+                status: 'error',
+                message: 'User ID is required',
+                timestamp: new Date().toISOString(),
+            }, { status: 400 });
+        }
+
+        if (!body.report_status) {
+            return NextResponse.json({
+                status: 'error',
+                message: 'report_status is required',
+                timestamp: new Date().toISOString(),
+            }, { status: 400 });
+        }
+
+        // Validate report_status value
+        const validStatuses = ['PENDING', 'DONE'];
+        const reportStatus = body.report_status.toUpperCase();
+
+        if (!validStatuses.includes(reportStatus)) {
+            return NextResponse.json({
+                status: 'error',
+                message: `Invalid report_status. Must be one of: ${validStatuses.join(', ')}`,
+                timestamp: new Date().toISOString(),
+            }, { status: 400 });
+        }
+
+        // Check if user exists
+        const existingUser = await db.select().from(users).where(eq(users.id, body.id));
+
+        if (existingUser.length === 0) {
+            return NextResponse.json({
+                status: 'error',
+                message: 'User not found',
+                timestamp: new Date().toISOString(),
+            }, { status: 404 });
+        }
+
+        // Update the report_status
+        const result = await db
+            .update(users)
+            .set({ report_status: reportStatus })
+            .where(eq(users.id, body.id))
+            .returning();
+
+        return NextResponse.json({
+            status: 'success',
+            message: 'Report status updated successfully',
+            data: result[0],
+            timestamp: new Date().toISOString(),
+        }, { status: 200 });
+
+    } catch (error) {
+        console.error('Error updating report status:', error);
+
+        return NextResponse.json({
+            status: 'error',
+            message: 'Failed to update report status',
+            error: error.message,
+            timestamp: new Date().toISOString(),
+        }, { status: 500 });
+    }
+}
