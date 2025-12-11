@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import SuccessPopup from "../components/SuccessPopup";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const [loader, setLoader] = useState(false);
@@ -13,22 +14,76 @@ export default function Home() {
   const router = useRouter();
 
   const handlePassData = async (isSuccess, payload) => {
-    if (!isSuccess) return;
-    console.log("payload", payload);
+    const {
+      name,
+      email,
+      birth: birthPlace,
+      day,
+      month,
+      year,
+      min: minute,
+      hour,
+      language,
+      gender,
+      tzone,
+      lat,
+      lon,
+      country,
+      place,
+      contact,
+    } = payload;
+
     setLoader(true);
-    // await new Promise((resolve) => setTimeout(resolve, 2000));
-    // router.push("/report");
-    setTimeout(() => {
-      setLoader(false);
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          birthPlace,
+          day,
+          month,
+          year,
+          minute,
+          hour,
+          language,
+          gender,
+          tzone,
+          lat,
+          lon,
+          country,
+          place,
+          contact,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors or other API errors
+        console.error('API Error:', data);
+        setLoader(false);
+        return;
+      }
+
       setShowSuccess(true);
-    }, 2000);
+
+    } catch (error) {
+      toast.error("Something went wrong");
+      console.error('Network or unexpected error:', error);
+    } finally {
+      setLoader(false);
+    }
   };
 
   const handlePopupClose = () => {
     localStorage.removeItem("user");
     setFormKey((prev) => prev + 1);
     setShowSuccess(false);
-    // router.push("/report"); // Uncomment when report page is ready or desired
   };
 
   return (

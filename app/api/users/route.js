@@ -19,12 +19,12 @@ export async function POST(request) {
             errors.name = 'Name is required and must be a non-empty string';
         }
 
-        if (!body.email || typeof body.email !== 'string' || body.email.trim() === '') {
-            errors.email = 'Email is required and must be a non-empty string';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
-            errors.email = 'Email must be a valid email address';
-        } else if (body.email.length > 256) {
-            errors.email = 'Email must not exceed 256 characters';
+        if (body.email) {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+                errors.email = 'Email must be a valid email address';
+            } else if (body.email.length > 256) {
+                errors.email = 'Email must not exceed 256 characters';
+            }
         }
 
         // Birth date validations (day, month, year)
@@ -112,13 +112,17 @@ export async function POST(request) {
         // Prepare data for insertion
         const userData = {
             name: body.name.trim(),
-            email: body.email.trim().toLowerCase(),
             day: body.day,
             month: body.month,
             year: body.year,
             hour: body.hour,
             minute: body.minute,
         };
+
+        // Add email if provided
+        if (body.email !== undefined && body.email !== null) {
+            userData.email = body.email.trim().toLowerCase();
+        }
 
         // Add optional fields if provided
         if (body.birthPlace !== undefined && body.birthPlace !== null) {
@@ -134,13 +138,16 @@ export async function POST(request) {
             userData.language = body.language;
         }
         if (body.tzone !== undefined && body.tzone !== null) {
-            userData.tzone = body.tzone.toString();
+            userData.tzone = parseFloat(body.tzone);
         }
         if (body.lat !== undefined && body.lat !== null) {
-            userData.lat = body.lat.toString();
+            userData.lat = parseFloat(body.lat);
         }
         if (body.lon !== undefined && body.lon !== null) {
-            userData.lon = body.lon.toString();
+            userData.lon = parseFloat(body.lon);
+        }
+        if (body.contact !== undefined && body.contact !== null) {
+            userData.contact = body.contact;
         }
 
         // Insert into database
