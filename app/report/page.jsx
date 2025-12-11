@@ -125,7 +125,7 @@ export default function ReportPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg bg-black/20 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md cursor-pointer"
+            className="w-[160px] px-4 py-2 rounded-lg bg-black/20 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md cursor-pointer"
           >
             <option value="ALL" className="text-black">
               All Status
