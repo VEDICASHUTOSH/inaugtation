@@ -9,6 +9,11 @@ export default function ReportPage() {
   const [toggleLoading, setToggleLoading] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [counts, setCounts] = useState({
+    total_count: 0,
+    pending_count: 0,
+    completed_count: 0,
+  });
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -29,6 +34,11 @@ export default function ReportPage() {
       const result = await response.json();
       if (result.status === "success") {
         setData(result.data);
+        setCounts({
+          total_count: result.total_count || 0,
+          pending_count: result.pending_count || 0,
+          completed_count: result.completed_count || 0,
+        });
       } else {
         console.error("Failed to fetch data:", result.message);
       }
@@ -85,7 +95,7 @@ export default function ReportPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center px-4 md:px-8 pt-10 pb-20">
+    <div className="min-h-screen w-full flex flex-col items-center px-4 md:px-8 pt-0 pb-20">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -127,6 +137,26 @@ export default function ReportPage() {
               Done
             </option>
           </select>
+        </div>
+        <div className="flex gap-6 text-sm md:text-base">
+          <div className="text-center">
+            <p className="text-zinc-400">Total</p>
+            <p className="text-white font-semibold text-lg">
+              {counts.total_count}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-orange-400">Pending</p>
+            <p className="text-orange-300 font-semibold text-lg">
+              {counts.pending_count}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-green-400">Completed</p>
+            <p className="text-green-300 font-semibold text-lg">
+              {counts.completed_count}
+            </p>
+          </div>
         </div>
       </motion.div>
 
