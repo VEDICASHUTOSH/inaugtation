@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/schema';
-import { eq, ilike, and, sql } from 'drizzle-orm';
+import { eq, ilike, and, sql, count, desc } from 'drizzle-orm';
 
 /**
  * GET /api/users
@@ -39,16 +39,27 @@ export async function GET(request) {
         // Query database with filters
         let result;
         if (conditions.length > 0) {
-            result = await db.select().from(users).where(and(...conditions));
+            result = await db.select().from(users).where(and(...conditions)).orderBy(desc(users.id));
         } else {
-            result = await db.select().from(users);
+            result = await db.select().from(users).orderBy(desc(users.id));
         }
+
+        // Get count statistics using SQL COUNT queries
+        const totalCountResult = await db.select({ count: count() }).from(users);
+        const pendingCountResult = await db.select({ count: count() }).from(users).where(eq(users.report_status, 'PENDING'));
+        const completedCountResult = await db.select({ count: count() }).from(users).where(eq(users.report_status, 'DONE'));
+
+        const totalCount = totalCountResult[0]?.count || 0;
+        const pendingCount = pendingCountResult[0]?.count || 0;
+        const completedCount = completedCountResult[0]?.count || 0;
 
         return NextResponse.json({
             status: 'success',
             message: 'Users retrieved successfully',
             data: result,
-            count: result.length,
+z            total_count: totalCount,
+            pending_count: pendingCount,
+            completed_count: completedCount,
             filters: {
                 report_status: reportStatus || null,
                 name: nameFilter || null,
