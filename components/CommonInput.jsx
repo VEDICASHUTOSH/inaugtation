@@ -63,6 +63,7 @@ export default function CommonInput(props) {
           ...prev,
           ...rest,
           birth: rest?.birth || rest?.place || prev.birth || "",
+          contact: rest?.contact ? rest.contact.replace(/^\+91/, "") : "",
           language: props.language ? props.language : prev.language,
         }));
         // setFormErrors({...JSON.parse(data)});

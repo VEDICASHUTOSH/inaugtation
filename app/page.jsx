@@ -2,9 +2,16 @@
 import CommonInput from "@/components/CommonInput";
 import PortalLayout from "@/components/PortalLayout";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+import SuccessPopup from "../components/SuccessPopup";
 
 export default function Home() {
   const [loader, setLoader] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+  const router = useRouter();
+
   const handlePassData = async (isSuccess, payload) => {
     const {
       name,
@@ -340,6 +347,7 @@ export default function Home() {
           </header>
           <div className="w-full max-w-3xl">
             <CommonInput
+              key={formKey}
               text="Enter your birth details"
               passdata={handlePassData}
               isLoading={loader}
@@ -358,6 +366,11 @@ export default function Home() {
           </div>
         </main>
       </div>
+      <SuccessPopup
+        isOpen={showSuccess}
+        onClose={handlePopupClose}
+        message="Your request has been processed successfully. We will get back to you shortly."
+      />
     </>
   );
 }
