@@ -11,7 +11,7 @@ export default function Footer() {
       style={{
         background: "rgb(2,10,34)",
       }}
-      className="border-t border-[rgb(22,47,98)] py-14 flex flex-col gap-5"
+      className="border-t border-[rgb(22,47,98)] py-8 md:py-12 mt-14 flex flex-col gap-5"
       id="footer"
     >
       {/* <Section

@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,7 @@ export default function RootLayout({ children }) {
             background: "rgb(2,10,34)",
             // overflow: "hidden",
           }}
-          className="relative z-[1] py-14 pb-20 md:pb-24 md:pt-14 h-full min-h-screen"
+          className="relative z-[1] pt-14 md:pt-14 h-full min-h-screen pb-0"
         >
           {/* <GlowBackground /> */}
           <div
@@ -113,6 +114,7 @@ export default function RootLayout({ children }) {
           </div>
 
           <div className="w-full h-full">{children}</div>
+          <Footer />
         </div>
       </body>
     </html>
