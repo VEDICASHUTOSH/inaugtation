@@ -73,6 +73,7 @@ export default function ReportPage() {
             item.id === id ? { ...item, report_status: newStatus } : item
           )
         );
+        fetchData();
       } else {
         console.error("Failed to update status:", result.message);
       }

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { eq, ilike, and, sql, count, desc } from "drizzle-orm";
-
 /**
  * GET /api/users
  * Retrieve all users with optional filters for report_status and name
@@ -15,10 +14,8 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const reportStatus = searchParams.get("report_status");
     const nameFilter = searchParams.get("name");
-
     // Build filter conditions
     const conditions = [];
-
     if (reportStatus) {
       // Validate report_status value
       if (!["PENDING", "DONE"].includes(reportStatus.toUpperCase())) {
@@ -33,29 +30,42 @@ export async function GET(request) {
       }
       conditions.push(eq(users.report_status, reportStatus.toUpperCase()));
     }
-
     if (nameFilter) {
       // Use sql template for case-insensitive partial matching
       conditions.push(sql`${users.name} ILIKE ${`%${nameFilter}%`}`);
     }
-
     // Query database with filters
     let result;
     if (conditions.length > 0) {
       result = await db
         .select()
         .from(users)
-        .where(and(...conditions));
+        .where(and(...conditions))
+        .orderBy(desc(users.id));
     } else {
-      result = await db.select().from(users);
+      result = await db.select().from(users).orderBy(desc(users.id));
     }
-
+    // Get count statistics using SQL COUNT queries
+    const totalCountResult = await db.select({ count: count() }).from(users);
+    const pendingCountResult = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.report_status, "PENDING"));
+    const completedCountResult = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.report_status, "DONE"));
+    const totalCount = totalCountResult[0]?.count || 0;
+    const pendingCount = pendingCountResult[0]?.count || 0;
+    const completedCount = completedCountResult[0]?.count || 0;
     return NextResponse.json(
       {
         status: "success",
         message: "Users retrieved successfully",
         data: result,
-        count: result.length,
+        total_count: totalCount,
+        pending_count: pendingCount,
+        completed_count: completedCount,
         filters: {
           report_status: reportStatus || null,
           name: nameFilter || null,
@@ -66,7 +76,6 @@ export async function GET(request) {
     );
   } catch (error) {
     console.error("Error retrieving users:", error);
-
     return NextResponse.json(
       {
         status: "error",
@@ -78,7 +87,6 @@ export async function GET(request) {
     );
   }
 }
-
 /**
  * POST /api/users
  * Create a new inauguration user with comprehensive validation
@@ -87,10 +95,8 @@ export async function POST(request) {
   try {
     // Parse request body
     const body = await request.json();
-
     // Validation object to collect all errors
     const errors = {};
-
     // Required field validations
     if (
       !body.name ||
@@ -99,7 +105,6 @@ export async function POST(request) {
     ) {
       errors.name = "Name is required and must be a non-empty string";
     }
-
     if (body.email) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
         errors.email = "Email must be a valid email address";
@@ -107,14 +112,12 @@ export async function POST(request) {
         errors.email = "Email must not exceed 256 characters";
       }
     }
-
     // Birth date validations (day, month, year)
     if (body.day === undefined || body.day === null) {
       errors.day = "Day is required";
     } else if (!Number.isInteger(body.day) || body.day < 1 || body.day > 31) {
       errors.day = "Day must be an integer between 1 and 31";
     }
-
     if (body.month === undefined || body.month === null) {
       errors.month = "Month is required";
     } else if (
@@ -124,7 +127,6 @@ export async function POST(request) {
     ) {
       errors.month = "Month must be an integer between 1 and 12";
     }
-
     if (body.year === undefined || body.year === null) {
       errors.year = "Year is required";
     } else if (
@@ -134,7 +136,6 @@ export async function POST(request) {
     ) {
       errors.year = `Year must be an integer between 1900 and ${new Date().getFullYear()}`;
     }
-
     // Birth time validations (hour, minute)
     if (body.hour === undefined || body.hour === null) {
       errors.hour = "Hour is required";
@@ -145,7 +146,6 @@ export async function POST(request) {
     ) {
       errors.hour = "Hour must be an integer between 0 and 23";
     }
-
     if (body.minute === undefined || body.minute === null) {
       errors.minute = "Minute is required";
     } else if (
@@ -155,7 +155,6 @@ export async function POST(request) {
     ) {
       errors.minute = "Minute must be an integer between 0 and 59";
     }
-
     // Optional field validations
     if (body.gender !== undefined && body.gender !== null) {
       if (typeof body.gender !== "string") {
@@ -164,7 +163,6 @@ export async function POST(request) {
         errors.gender = "Gender must not exceed 10 characters";
       }
     }
-
     if (body.language !== undefined && body.language !== null) {
       if (typeof body.language !== "string") {
         errors.language = "Language must be a string";
@@ -172,7 +170,6 @@ export async function POST(request) {
         errors.language = "Language must not exceed 20 characters";
       }
     }
-
     // Geographic coordinates validations
     if (body.lat !== undefined && body.lat !== null) {
       const lat = parseFloat(body.lat);
@@ -180,14 +177,12 @@ export async function POST(request) {
         errors.lat = "Latitude must be a number between -90 and 90";
       }
     }
-
     if (body.lon !== undefined && body.lon !== null) {
       const lon = parseFloat(body.lon);
       if (isNaN(lon) || lon < -180 || lon > 180) {
         errors.lon = "Longitude must be a number between -180 and 180";
       }
     }
-
     // Timezone validation
     if (body.tzone !== undefined && body.tzone !== null) {
       const tzone = parseFloat(body.tzone);
@@ -195,7 +190,6 @@ export async function POST(request) {
         errors.tzone = "Timezone must be a number between -12 and 14";
       }
     }
-
     // If there are any validation errors, return them
     if (Object.keys(errors).length > 0) {
       return NextResponse.json(
@@ -208,7 +202,6 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-
     // Prepare data for insertion
     const userData = {
       name: body.name.trim(),
@@ -218,12 +211,10 @@ export async function POST(request) {
       hour: body.hour,
       minute: body.minute,
     };
-
     // Add email if provided
     if (body.email !== undefined && body.email !== null) {
       userData.email = body.email.trim().toLowerCase();
     }
-
     // Add optional fields if provided
     if (body.birthPlace !== undefined && body.birthPlace !== null) {
       userData.birthPlace = body.birthPlace;
@@ -249,10 +240,8 @@ export async function POST(request) {
     if (body.contact !== undefined && body.contact !== null) {
       userData.contact = body.contact;
     }
-
     // Insert into database
     const result = await db.insert(users).values(userData).returning();
-
     return NextResponse.json(
       {
         status: "success",
@@ -264,7 +253,6 @@ export async function POST(request) {
     );
   } catch (error) {
     console.error("Error creating user:", error);
-
     // Handle unique constraint violations (e.g., duplicate email)
     if (error.code === "23505") {
       return NextResponse.json(
@@ -276,7 +264,6 @@ export async function POST(request) {
         { status: 409 }
       );
     }
-
     // Handle other database errors
     return NextResponse.json(
       {
@@ -289,70 +276,90 @@ export async function POST(request) {
     );
   }
 }
-
 /**
  * PATCH /api/users
- * Update user report_status
+ * Update report_status for a specific user
+ * Request body:
+ * - id: User ID (required)
+ * - report_status: New status value - PENDING or DONE (required)
  */
 export async function PATCH(request) {
   try {
     const body = await request.json();
-    const { id, report_status } = body;
-
-    if (!id) {
+    // Validation
+    if (!body.id) {
       return NextResponse.json(
         {
           status: "error",
           message: "User ID is required",
+          timestamp: new Date().toISOString(),
         },
         { status: 400 }
       );
     }
-
-    if (
-      !report_status ||
-      !["PENDING", "DONE"].includes(report_status.toUpperCase())
-    ) {
+    if (!body.report_status) {
       return NextResponse.json(
         {
           status: "error",
-          message: "Valid report_status (PENDING or DONE) is required",
+          message: "report_status is required",
+          timestamp: new Date().toISOString(),
         },
         { status: 400 }
       );
     }
-
-    const result = await db
-      .update(users)
-      .set({ report_status: report_status.toUpperCase() })
-      .where(eq(users.id, id))
-      .returning();
-
-    if (result.length === 0) {
+    // Validate report_status value
+    const validStatuses = ["PENDING", "DONE"];
+    const reportStatus = body.report_status.toUpperCase();
+    if (!validStatuses.includes(reportStatus)) {
+      return NextResponse.json(
+        {
+          status: "error",
+          message: `Invalid report_status. Must be one of: ${validStatuses.join(
+            ", "
+          )}`,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      );
+    }
+    // Check if user exists
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, body.id));
+    if (existingUser.length === 0) {
       return NextResponse.json(
         {
           status: "error",
           message: "User not found",
+          timestamp: new Date().toISOString(),
         },
         { status: 404 }
       );
     }
-
+    // Update the report_status
+    const result = await db
+      .update(users)
+      .set({ report_status: reportStatus })
+      .where(eq(users.id, body.id))
+      .returning();
     return NextResponse.json(
       {
         status: "success",
-        message: "User status updated successfully",
+        message: "Report status updated successfully",
         data: result[0],
+        timestamp: new Date().toISOString(),
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error updating user:", error);
+    console.error("Error updating report status:", error);
     return NextResponse.json(
       {
         status: "error",
-        message: "Failed to update user",
+        message: "Failed to update report status",
         error: error.message,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
