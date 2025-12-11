@@ -1,101 +1,71 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import PortalLayout from "@/components/PortalLayout";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
-
-// Mock Data matching the payload structure
-const MOCK_DATA = [
-  {
-    id: 1,
-    name: "Aarav Sharma",
-    contact: "9876543210",
-    email: "aarav.sharma@example.com",
-    birthPlace: "New Delhi, India",
-    dob: "1990-05-15",
-    tob: "14:30",
-    gender: "male",
-    status: "pending",
-  },
-  {
-    id: 2,
-    name: "Priya Patel",
-    contact: "9812345678",
-    email: "priya.p@example.com",
-    birthPlace: "Mumbai, India",
-    dob: "1995-08-22",
-    tob: "09:15",
-    gender: "female",
-    status: "completed",
-  },
-  {
-    id: 3,
-    name: "Rahul Verma",
-    contact: "9988776655",
-    email: "rahul.v@example.com",
-    birthPlace: "Bangalore, India",
-    dob: "1988-12-10",
-    tob: "18:45",
-    gender: "male",
-    status: "pending",
-  },
-  {
-    id: 4,
-    name: "Sneha Gupta",
-    contact: "9123456780",
-    email: "sneha.g@example.com",
-    birthPlace: "Kolkata, India",
-    dob: "1992-03-30",
-    tob: "06:00",
-    gender: "female",
-    status: "completed",
-  },
-  {
-    id: 5,
-    name: "Vikram Singh",
-    contact: "9876509876",
-    email: "vikram.s@example.com",
-    birthPlace: "Jaipur, India",
-    dob: "1985-07-07",
-    tob: "12:00",
-    gender: "male",
-    status: "pending",
-  },
-];
 
 export default function ReportPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toggleLoading, setToggleLoading] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   useEffect(() => {
-    // Simulate API call
-    const fetchData = async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setData(MOCK_DATA);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const delayDebounceFn = setTimeout(() => {
+      fetchData();
+    }, 500);
 
-    fetchData();
-  }, []);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, statusFilter]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter !== "ALL") params.append("report_status", statusFilter);
+      if (searchTerm) params.append("name", searchTerm);
+
+      const response = await fetch(`/api/users?${params.toString()}`);
+      const result = await response.json();
+      if (result.status === "success") {
+        setData(result.data);
+      } else {
+        console.error("Failed to fetch data:", result.message);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStatusToggle = async (id, currentStatus) => {
     setToggleLoading(id);
-    const newStatus = currentStatus === "pending" ? "completed" : "pending";
+    const newStatus = currentStatus === "PENDING" ? "DONE" : "PENDING";
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setData((prevData) =>
-        prevData.map((item) =>
-          item.id === id ? { ...item, status: newStatus } : item
-        )
-      );
+      const response = await fetch("/api/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id, report_status: newStatus }),
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        // Refresh data to respect current sorting/filtering if needed,
+        // or just update local state if filter permits visibility.
+        // Simple approach: Update local state
+        setData((prevData) =>
+          prevData.map((item) =>
+            item.id === id ? { ...item, report_status: newStatus } : item
+          )
+        );
+      } else {
+        console.error("Failed to update status:", result.message);
+      }
     } catch (error) {
       console.error("Error updating status:", error);
     } finally {
@@ -103,17 +73,61 @@ export default function ReportPage() {
     }
   };
 
+  const formatDOB = (day, month, year) => {
+    if (!day || !month || !year) return "-";
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatTime = (hour, minute) => {
+    if (hour === undefined || minute === undefined) return "-";
+    const minStr = minute < 10 ? `0${minute}` : minute;
+    return `${hour}:${minStr}`;
+  };
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-4 md:px-8 pt-10 pb-20">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-8xl mb-8 text-center"
+        className="w-full max-w-8xl mb-6 text-center"
       >
         <h1 className="text-4xl md:text-5xl font-ptsans-bold text-white mb-2">
           Inaugration Leads
         </h1>
         <p className="text-zinc-300 text-lg">List of all user submissions</p>
+      </motion.div>
+
+      {/* Filters Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="w-full max-w-8xl mb-6 flex flex-col md:flex-row gap-4 items-center justify-between"
+      >
+        <div className="flex w-full md:w-auto gap-4">
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full md:w-64 px-4 py-2 rounded-lg bg-black/20 border border-white/10 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg bg-black/20 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md cursor-pointer"
+          >
+            <option value="ALL" className="text-black">
+              All Status
+            </option>
+            <option value="PENDING" className="text-black">
+              Pending
+            </option>
+            <option value="DONE" className="text-black">
+              Done
+            </option>
+          </select>
+        </div>
       </motion.div>
 
       {loading ? (
@@ -154,32 +168,38 @@ export default function ReportPage() {
                   >
                     <td className="px-6 py-4 font-medium">{item.name}</td>
                     <td className="px-6 py-4 text-zinc-200">
-                      +91 {item.contact}
+                      {item.contact ? `+91 ${item.contact}` : "-"}
                     </td>
-                    <td className="px-6 py-4 text-zinc-200">{item.email}</td>
+                    <td className="px-6 py-4 text-zinc-200">
+                      {item.email || "-"}
+                    </td>
                     <td className="px-6 py-4 text-zinc-200">
                       <div className="flex flex-col">
-                        <span>Date: {item.dob}</span>
+                        <span>
+                          Date: {formatDOB(item.day, item.month, item.year)}
+                        </span>
                         <span className="text-xs text-zinc-400">
-                          Time: {item.tob}
+                          Time: {formatTime(item.hour, item.minute)}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-zinc-200">
-                      {item.birthPlace}
+                      {item.birthPlace || "-"}
                     </td>
                     <td className="px-6 py-4 capitalize text-zinc-200">
-                      {item.gender}
+                      {item.gender || "-"}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
-                        onClick={() => handleStatusToggle(item.id, item.status)}
+                        onClick={() =>
+                          handleStatusToggle(item.id, item.report_status)
+                        }
                         disabled={toggleLoading === item.id}
                         className={`
                             px-4 py-1.5 rounded-full text-xs font-semibold
                             transition-all duration-300 transform hover:scale-105
                             ${
-                              item.status === "completed"
+                              item.report_status === "DONE"
                                 ? "bg-green-500/20 text-green-300 border border-green-500/50 hover:bg-green-500/30"
                                 : "bg-orange-500/20 text-orange-300 border border-orange-500/50 hover:bg-orange-500/30"
                             }
@@ -193,7 +213,9 @@ export default function ReportPage() {
                         {toggleLoading === item.id ? (
                           <Loader2 className="w-4 h-4 animate-spin inline-block" />
                         ) : (
-                          <span className="capitalize">{item.status}</span>
+                          <span className="capitalize">
+                            {item.report_status || "PENDING"}
+                          </span>
                         )}
                       </button>
                     </td>
