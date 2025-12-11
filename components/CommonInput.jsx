@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { GlowBackground2 } from "./GlowBackground2";
 import { FetchApi } from "../utils/fetchApi";
 import dynamic from "next/dynamic";
+import { toast } from "react-hot-toast";
 export function daysInMonth(month, year) {
   return new Date(year, month, 0).getDate();
 }
@@ -14,7 +15,7 @@ const DynamicSample = dynamic(() => import("./asyncOnePage"), {
 });
 
 export default function CommonInput(props) {
-  const [error, seterror] = useState(null);
+  // const [error, seterror] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [reqdate, setreqdate] = useState(false);
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function CommonInput(props) {
     lat: "",
     lon: "",
     country: "India",
+    contact: "",
   };
 
   // const [city, setcity] = useState({name:''});
@@ -93,20 +95,20 @@ export default function CommonInput(props) {
     ) {
       setreqdate(true);
       setFormValues((prev) => ({ ...prev, birth: "" }));
-      seterror("Please enter correct date");
+      toast.error("Please enter correct date");
       setFieldErrors({ birth: "*invalid date" });
       // Clear errors after 4 seconds
       setTimeout(() => {
-        seterror(null);
+        // seterror(null);
         setFieldErrors({});
         setreqdate(false);
       }, 4000);
     } else if (Object.keys(validationErrors).length !== 0) {
-      seterror("All detailed are must be filled");
+      toast.error("All details must be filled");
       setFieldErrors(validationErrors);
       // Clear errors after 4 seconds
       setTimeout(() => {
-        seterror(null);
+        // seterror(null);
         setFieldErrors({});
         setreqdate(false);
       }, 4000);
@@ -114,7 +116,11 @@ export default function CommonInput(props) {
     } else if (Object.keys(validationErrors).length === 0 && !reqdate) {
       const { nameu, ...rest } = formValues;
       const sanitizedName = typeof rest.name === "string" ? rest.name : "";
-      const payload = { ...rest, name: sanitizedName };
+      const payload = {
+        ...rest,
+        name: sanitizedName,
+        contact: "+91" + rest.contact,
+      };
       localStorage.setItem("user", JSON.stringify(payload));
       if (shouldAutoScroll && typeof window !== "undefined") {
         window.scrollTo(0, 0);
@@ -122,11 +128,11 @@ export default function CommonInput(props) {
       props.passdata && props.passdata(true, payload);
     } else {
       // setFormErrors(validate(formValues));
-      seterror("Please enter correct date");
+      toast.error("Please enter correct date");
       setFieldErrors({ birth: "*invalid date" });
       // Clear errors after 4 seconds
       setTimeout(() => {
-        seterror(null);
+        // seterror(null);
         setFieldErrors({});
         setreqdate(false);
       }, 4000);
@@ -141,6 +147,11 @@ export default function CommonInput(props) {
     // if (!values.email) {
     //   error.email = "*required";
     // }
+    if (!values.contact) {
+      error.contact = "*required";
+    } else if (!/^[0-9]{10}$/.test(values.contact)) {
+      error.contact = "*invalid contact number";
+    }
     if (values.hour === "" || isNaN(values.hour) || values.hour === null) {
       error.hour = "*required";
     }
@@ -164,7 +175,7 @@ export default function CommonInput(props) {
 
   const handle = async (place) => {
     if (!formValues.day || !formValues.month || !formValues.year) {
-      seterror("Please enter the date before selecting a place");
+      toast.error("Please enter the date before selecting a place");
     }
     settypwhead(true);
     try {
@@ -187,7 +198,7 @@ export default function CommonInput(props) {
         tzone: timezone.response.timezone,
       }));
     } catch (error) {
-      seterror("Error fetching timezone. Please try again.");
+      toast.error("Error fetching timezone. Please try again.");
     } finally {
       settypwhead(false);
     }
@@ -356,7 +367,7 @@ export default function CommonInput(props) {
                 ))}
               </select>
             </div>
-            {/* Month (bigger on mobile) */}
+            {/* Month (bigger on contact) */}
             <div className="col-span-5">
               <select
                 name="month"
@@ -532,15 +543,44 @@ export default function CommonInput(props) {
             clear={reqdate}
           />
         </div>
-        {error !== null && (
-          <span
-            className={`${
-              error !== null ? "block " : "hidden"
-            } text-red-700 p-1 bg-red-50 w-full pl-3`}
-          >
-            {error}
-          </span>
-        )}
+
+        <div className="flex flex-col gap-3">
+          <label className="text-left text-white font-medium">
+            Contact Number
+          </label>
+          <div className="flex gap-2 items-center">
+            <span
+              className="p-2 rounded-md text-white font-medium"
+              style={{
+                background: "color-mix(in oklab, white 5%, transparent)",
+                border: "1px solid color-mix(in oklab, white 10%, transparent)",
+              }}
+            >
+              +91
+            </span>
+            <div className="inputbox2">
+              <input
+                className={`input ${fieldErrors.contact ? " input-error" : ""}`}
+                type="tel"
+                name="contact"
+                maxLength={10}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  setFormValues({ ...formValues, contact: val });
+                }}
+                value={formValues.contact}
+                placeholder="Contact Number"
+                style={{
+                  background: "color-mix(in oklab, white 5%, transparent)",
+                  border:
+                    "1px solid color-mix(in oklab, white 10%, transparent)",
+                  color: "white",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-3">
           <label className="text-left text-white font-medium">
             {props.data?.email !== undefined
@@ -563,6 +603,7 @@ export default function CommonInput(props) {
             />
           </div>
         </div>
+
         <div>
           <button
             type="submit"
