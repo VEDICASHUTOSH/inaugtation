@@ -83,6 +83,7 @@ export default function Home() {
   const handlePopupClose = () => {
     setFormKey((prev) => prev + 1);
     setShowSuccess(false);
+    localStorage.clear("user");
   };
 
   return (
