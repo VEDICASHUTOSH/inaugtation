@@ -216,6 +216,7 @@ export default function ReportPage() {
                     </td>
                     <td className="px-6 py-4 text-zinc-200">
                       {item.birthPlace || "-"}
+                      {` (lat:${item?.lat}, lon:${item?.lon})`}
                     </td>
                     <td className="px-6 py-4 capitalize text-zinc-200">
                       {item.gender || "-"}
